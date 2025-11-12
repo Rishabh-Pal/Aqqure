@@ -161,9 +161,9 @@ const AnimatedFinancialTable = ({ data, location }: AnimatedFinancialTableProps)
 
   // Mini Chart View for Domain Northside
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <h4 className="text-xs font-semibold text-gray-400">Week Comparison</h4>
-      <div className="flex items-end justify-between gap-1.5 h-20">
+      <div className="flex items-end justify-between gap-3 h-32">
         {animatedData.map((row, index) => {
           const currentValue = parseFloat(row.amount.replace(/[^0-9.]/g, ''))
           const lastWeekValue = parseFloat(row.lastWeek.replace(/[^0-9.]/g, ''))
@@ -177,20 +177,20 @@ const AnimatedFinancialTable = ({ data, location }: AnimatedFinancialTableProps)
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: index * 0.1 }}
-              className="flex-1 flex flex-col items-center gap-1"
+              className="flex-1 flex flex-col items-center gap-2 min-w-0"
             >
-              <div className="relative w-full h-16 flex items-end justify-center gap-0.5">
+              <div className="relative w-full h-24 flex items-end justify-center gap-1">
                 <motion.div
                   initial={{ height: 0 }}
                   animate={{ height: `${lastWeekHeight}%` }}
                   transition={{ duration: 0.5, delay: index * 0.1 + 0.2 }}
-                  className="w-1/2 bg-gray-600 rounded-t"
+                  className="w-[45%] bg-gray-600/70 rounded-t min-h-[2px]"
                 />
                 <motion.div
                   initial={{ height: 0 }}
                   animate={{ height: `${currentHeight}%` }}
                   transition={{ duration: 0.5, delay: index * 0.1 + 0.3 }}
-                  className={`w-1/2 rounded-t ${
+                  className={`w-[45%] rounded-t min-h-[2px] ${
                     row.category === 'Net Profit'
                       ? 'bg-green-500'
                       : row.category === 'Revenue'
@@ -199,9 +199,9 @@ const AnimatedFinancialTable = ({ data, location }: AnimatedFinancialTableProps)
                   }`}
                 />
               </div>
-              <div className="text-center">
-                <div className="text-[9px] text-gray-300 font-semibold">{row.amount}</div>
-                <div className="text-[8px] text-gray-500 truncate">{row.category.split(' ')[0]}</div>
+              <div className="text-center w-full">
+                <div className="text-[10px] text-gray-300 font-semibold truncate">{row.amount}</div>
+                <div className="text-[9px] text-gray-500 truncate leading-tight mt-0.5">{row.category.split(' ')[0]}</div>
               </div>
             </motion.div>
           )

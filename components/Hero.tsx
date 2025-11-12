@@ -1,23 +1,122 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowRight, TrendingUp, DollarSign, Calendar, BarChart3, AlertCircle, Lightbulb, Target, Zap } from 'lucide-react'
+import { ArrowRight, TrendingUp, DollarSign, Calendar, BarChart3, AlertCircle, Lightbulb, Target, Zap, Bot, MessageCircle, Send } from 'lucide-react'
 import { useState, useMemo, useEffect } from 'react'
 import RotatingText from './RotatingText'
 import AnimatedFinancialTable from './AnimatedFinancialTable'
 
 type DashboardView = 'financial' | 'insights' | 'forecast' | 'alerts'
+type AnimationPhase = 'locations' | 'ai-bot' | 'table'
 
 const Hero = () => {
   const [activeLocation, setActiveLocation] = useState('Downtown Austin')
   const [dashboardView, setDashboardView] = useState<DashboardView>('financial')
   const [isMounted, setIsMounted] = useState(false)
+  const [animationPhase, setAnimationPhase] = useState<AnimationPhase>('locations')
+  const [currentLocationIndex, setCurrentLocationIndex] = useState(0)
+  const [clickingLocation, setClickingLocation] = useState<string | null>(null)
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0)
+
+  const locations = ['Downtown Austin', 'South Congress', 'Domain Northside']
+
+  // AI Bot conversation messages
+  const aiConversations = {
+    'Downtown Austin': [
+      { role: 'user', text: 'Show me this week\'s performance' },
+      { role: 'assistant', text: 'Revenue is up 7.4% this week! Labor costs increased slightly due to overtime hours.' },
+      { role: 'user', text: 'Any recommendations?' },
+      { role: 'assistant', text: 'Consider adjusting Friday-Saturday schedules to reduce overtime while maintaining service quality.' },
+    ],
+    'South Congress': [
+      { role: 'user', text: 'How are we doing this week?' },
+      { role: 'assistant', text: 'Excellent! Revenue up 6.7% with strong weekend performance. Peak hours show 45% higher revenue.' },
+      { role: 'user', text: 'What should we focus on?' },
+      { role: 'assistant', text: 'Extending operating hours on weekends could maximize your peak traffic potential.' },
+    ],
+    'Domain Northside': [
+      { role: 'user', text: 'Weekly report please' },
+      { role: 'assistant', text: 'Great news! Food waste reduced by 8% and net profit increased 44% this week.' },
+      { role: 'user', text: 'Any concerns?' },
+      { role: 'assistant', text: 'Weekday dinner traffic is lower than expected. Consider weekday promotions to boost evening revenue.' },
+    ],
+  }
+
+  // Animation loop effect
+  useEffect(() => {
+    if (!isMounted) return
+
+    let isRunning = true
+
+    const sequence = async () => {
+      while (isRunning) {
+        // Phase 1: Cycle through locations with click animations
+        setAnimationPhase('locations')
+        
+        for (let i = 0; i < locations.length; i++) {
+          if (!isRunning) break
+          
+          setCurrentLocationIndex(i)
+          setClickingLocation(locations[i])
+          
+          // Wait a bit before "clicking"
+          await new Promise(resolve => setTimeout(resolve, 800))
+          
+          if (!isRunning) break
+          setActiveLocation(locations[i])
+          setClickingLocation(null)
+          
+          // Show location for 2 seconds
+          await new Promise(resolve => setTimeout(resolve, 2000))
+        }
+
+        if (!isRunning) break
+
+        // Phase 2: Show AI Bot (use the last location from the cycle)
+        const lastLocation = locations[locations.length - 1]
+        setAnimationPhase('ai-bot')
+        setCurrentMessageIndex(0)
+        
+        // Small delay to ensure state updates
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
+        const currentConversation = aiConversations[lastLocation as keyof typeof aiConversations]
+        
+        // Animate through messages
+        for (let i = 0; i < currentConversation.length; i++) {
+          if (!isRunning) break
+          setCurrentMessageIndex(i)
+          await new Promise(resolve => setTimeout(resolve, 2000))
+        }
+
+        if (!isRunning) break
+
+        // Keep bot visible for additional 2 seconds
+        await new Promise(resolve => setTimeout(resolve, 2000))
+
+        if (!isRunning) break
+
+        // Phase 3: Show table
+        setAnimationPhase('table')
+        
+        // Show table for 3 seconds
+        await new Promise(resolve => setTimeout(resolve, 3000))
+
+        // Reset for next cycle
+        setCurrentMessageIndex(0)
+      }
+    }
+
+    sequence()
+
+    return () => {
+      isRunning = false
+    }
+  }, [isMounted])
 
   useEffect(() => {
     setIsMounted(true)
   }, [])
-
-  const locations = ['Downtown Austin', 'South Congress', 'Domain Northside']
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -373,14 +472,26 @@ const Hero = () => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="bg-[#1a1a1a] rounded-xl md:rounded-2xl border border-gray-800 shadow-2xl p-3 sm:p-4 md:p-6 backdrop-blur-sm"
+              className="relative bg-[#1a1a1a] rounded-xl md:rounded-2xl border border-gray-800 shadow-2xl p-3 sm:p-4 md:p-6 backdrop-blur-sm"
             >
               {/* Location Tabs */}
               <div className="flex gap-1 sm:gap-2 mb-3 sm:mb-4 border-b border-gray-800 pb-3 sm:pb-4 overflow-x-auto scrollbar-hide">
-                {locations.map((location) => (
-                  <button
+                {locations.map((location, index) => (
+                  <motion.button
                     key={location}
                     onClick={() => setActiveLocation(location)}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    animate={{
+                      scale: clickingLocation === location ? 0.95 : 1,
+                      backgroundColor: 
+                        activeLocation === location
+                          ? 'rgba(37, 99, 235, 1)'
+                          : clickingLocation === location
+                          ? 'rgba(55, 65, 81, 0.8)'
+                          : 'transparent',
+                    }}
+                    transition={{ duration: 0.2 }}
                     className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
                       activeLocation === location
                         ? 'bg-blue-600 text-white'
@@ -389,7 +500,7 @@ const Hero = () => {
                   >
                     <span className="hidden sm:inline">{location}</span>
                     <span className="sm:hidden">{location.split(' ')[0]}</span>
-                  </button>
+                  </motion.button>
                 ))}
               </div>
 
@@ -416,9 +527,10 @@ const Hero = () => {
 
               {/* Dynamic Content Based on View */}
               <AnimatePresence mode="wait">
+                {/* Financial Table View - Always show when dashboardView is financial */}
                 {dashboardView === 'financial' && (
                   <motion.div
-                    key={`financial-${activeLocation}`}
+                    key={`financial-${activeLocation}-${animationPhase}`}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
@@ -579,6 +691,131 @@ const Hero = () => {
 
             {/* Decorative glow effect */}
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl opacity-20 blur-xl -z-10" />
+
+            {/* Floating Chatbot Icon */}
+            <AnimatePresence>
+              {animationPhase !== 'ai-bot' && (
+                <motion.button
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  className="absolute bottom-4 right-4 w-14 h-14 bg-gradient-to-r from-blue-600 to-blue-700 rounded-full shadow-lg flex items-center justify-center z-50 hover:shadow-blue-500/50 transition-shadow"
+                >
+                  <Bot className="w-6 h-6 text-white" />
+                </motion.button>
+              )}
+            </AnimatePresence>
+
+            {/* AI Bot Overlay - Appears when animationPhase is 'ai-bot' */}
+            <AnimatePresence>
+              {animationPhase === 'ai-bot' && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.8, y: 20 }}
+                  transition={{ duration: 0.4, ease: 'easeOut' }}
+                  className="absolute inset-0 bg-[#1a1a1a] rounded-xl md:rounded-2xl border border-gray-800 shadow-2xl p-4 md:p-6 z-50 backdrop-blur-sm flex flex-col overflow-hidden"
+                >
+                  <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-700 flex-shrink-0">
+                    <div className="relative">
+                      <Bot className="w-8 h-8 text-blue-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-white">AI Assistant</h3>
+                      <p className="text-xs text-gray-400">Analyzing {activeLocation} data...</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 flex-1 overflow-y-auto pr-2 min-h-0">
+                    <AnimatePresence mode="wait">
+                      {aiConversations[activeLocation as keyof typeof aiConversations]
+                        .slice(0, currentMessageIndex + 1)
+                        .map((message, index) => (
+                          <motion.div
+                            key={index}
+                            initial={{ opacity: 0, x: message.role === 'user' ? 20 : -20, y: 10 }}
+                            animate={{ opacity: 1, x: 0, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            transition={{ duration: 0.3 }}
+                            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                          >
+                            <div
+                              className={`max-w-[80%] rounded-lg p-3 ${
+                                message.role === 'user'
+                                  ? 'bg-blue-600 text-white'
+                                  : 'bg-gray-800 text-gray-200 border border-gray-700'
+                              }`}
+                            >
+                              <div className="flex items-start gap-2">
+                                {message.role === 'assistant' && (
+                                  <Bot className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
+                                )}
+                                {message.role === 'user' && (
+                                  <MessageCircle className="w-4 h-4 text-white/80 mt-0.5 flex-shrink-0" />
+                                )}
+                                <p className="text-sm leading-relaxed">{message.text}</p>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                    </AnimatePresence>
+
+                    {/* Typing indicator when waiting for next message */}
+                    {currentMessageIndex < aiConversations[activeLocation as keyof typeof aiConversations].length - 1 && 
+                     aiConversations[activeLocation as keyof typeof aiConversations][currentMessageIndex]?.role === 'user' && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex justify-start"
+                      >
+                        <div className="bg-gray-800 border border-gray-700 rounded-lg p-3">
+                          <div className="flex gap-1">
+                            <motion.div
+                              animate={{ y: [0, -4, 0] }}
+                              transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                              className="w-2 h-2 bg-blue-400 rounded-full"
+                            />
+                            <motion.div
+                              animate={{ y: [0, -4, 0] }}
+                              transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                              className="w-2 h-2 bg-blue-400 rounded-full"
+                            />
+                            <motion.div
+                              animate={{ y: [0, -4, 0] }}
+                              transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                              className="w-2 h-2 bg-blue-400 rounded-full"
+                            />
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+
+                  {/* Input Box */}
+                  <div className="mt-4 pt-4 border-t border-gray-700 flex-shrink-0">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="Type your message..."
+                        className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        disabled
+                      />
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg p-2.5 flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled
+                      >
+                        <Send className="w-4 h-4" />
+                      </motion.button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </motion.div>
       </div>
