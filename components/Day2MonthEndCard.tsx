@@ -30,7 +30,7 @@ const Day2MonthEndCard = () => {
 
           {/* Right Side - Content */}
           <div className="lg:col-span-2 flex relative z-0">
-             <CalendarDays  className="w-40 h-60 absolute top-[-100px] right-10 text-purple-600" />
+             <CalendarDays  className="md:w-40 md:h-60 w-16 h-16 absolute md:top-[-100px] top-[-30px] md:right-10 right-5 text-purple-600" />
             <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl border border-purple-200 p-6 md:p-8 flex flex-col w-full h-full">
               {/* Title and Subtitle */}
               <div className="mb-6">

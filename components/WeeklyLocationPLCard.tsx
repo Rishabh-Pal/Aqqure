@@ -104,7 +104,7 @@ const WeeklyLocationPLCard = () => {
           {/* Left Side - Blocks with arrows */}
           <div className="lg:col-span-2 flex relative z-0">
             <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6 md:p-8 flex flex-col w-full">
-              <MapPinned  className="w-40 h-60 absolute top-[-100px] right-10 text-red-600" />
+              <MapPinned  className="md:w-40 md:h-60 w-16 h-16 absolute md:top-[-100px] top-[-30px] md:right-10 right-5 text-red-600" />
               {/* Title and Subtitle inside left block */}
               <div className="mb-6">
                 <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
@@ -115,19 +115,19 @@ const WeeklyLocationPLCard = () => {
                 </p>
               </div>
 
-              {/* Blocks Container - Single line */}
-              <div className="flex-1 flex items-center justify-center gap-3 md:gap-4 overflow-x-auto min-h-[120px]">
+              {/* Blocks Container - Vertical on mobile, Horizontal on desktop */}
+              <div className="flex-1 flex flex-col md:flex-row flex-nowrap items-center justify-center gap-2 md:gap-4 overflow-x-auto min-h-[80px] md:min-h-[120px] w-full">
                 {flowSteps.map((step, index) => {
                   const StepIcon = step.icon
                   const isActive = index === activeStep
                   const isPast = index < activeStep
                   
                   return (
-                    <div key={step.id} className="flex items-center gap-2 md:gap-3 flex-shrink-0">
+                    <div key={step.id} className="flex flex-col md:flex-row items-center gap-1.5 md:gap-3 flex-shrink-0 w-auto md:w-auto">
                       {/* Block */}
                       <div
                         className={`
-                          flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 cursor-pointer transition-all duration-300
+                          flex items-center justify-center gap-1.5 md:gap-2 px-2 md:px-3 py-2 md:py-3 rounded-lg border-2 cursor-pointer transition-all duration-300 min-w-[100px] max-w-[200px] md:min-w-[100px] md:w-auto h-[50px] md:h-[70px]
                           ${isActive 
                             ? 'shadow-md scale-105' 
                             : isPast
@@ -138,8 +138,6 @@ const WeeklyLocationPLCard = () => {
                         style={{
                           background: isActive || isPast ? `${step.color}10` : 'white',
                           borderColor: isActive || isPast ? step.color : '#e5e7eb',
-                          minWidth: '140px',
-                          height: '70px',
                           boxShadow: isActive 
                             ? `0 4px 12px ${step.color}40` 
                             : isPast 
@@ -150,31 +148,42 @@ const WeeklyLocationPLCard = () => {
                         onClick={() => handleInteraction(index)}
                       >
                         <StepIcon 
-                          className="w-5 h-5 flex-shrink-0" 
+                          className="w-3.5 h-3.5 md:w-5 md:h-5 flex-shrink-0" 
                           style={{ color: step.color }} 
                         />
                         <span 
-                          className="text-base font-semibold whitespace-nowrap"
+                          className="text-xs md:text-base font-semibold whitespace-nowrap"
                           style={{ color: isActive || isPast ? step.color : '#6b7280' }}
                         >
                           {step.label}
                         </span>
                       </div>
 
-                      {/* Custom Arrow */}
+                      {/* Custom Arrow - Vertical on mobile, Horizontal on desktop */}
                       {index < flowSteps.length - 1 && (
-                        <div className="relative flex items-center">
-                          {/* Arrow line */}
+                        <div className="relative flex items-center justify-center">
+                          {/* Arrow line - Vertical on mobile, Horizontal on desktop */}
                           <div
-                            className="h-0.5"
+                            className="w-0.5 md:w-[30px] h-4 md:h-0.5"
                             style={{
-                              width: '30px',
                               background: isPast ? flowSteps[index + 1].color : '#d1d5db',
                               transition: 'all 0.3s ease',
                             }}
                           />
-                          {/* Arrow head */}
+                          {/* Arrow head - Down on mobile, Right on desktop */}
                           <div
+                            className="md:hidden"
+                            style={{
+                              width: 0,
+                              height: 0,
+                              borderTop: `4px solid ${isPast ? flowSteps[index + 1].color : '#d1d5db'}`,
+                              borderLeft: '2px solid transparent',
+                              borderRight: '2px solid transparent',
+                              transition: 'all 0.3s ease',
+                            }}
+                          />
+                          <div
+                            className="hidden md:block"
                             style={{
                               width: 0,
                               height: 0,

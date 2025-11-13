@@ -16,9 +16,22 @@ interface FinancialRow {
 interface AnimatedFinancialTableProps {
   data: FinancialRow[]
   location: string
+  scrollProgress?: number
+  textColor?: string
+  textColorLight?: string
+  textColorHeader?: string
+  borderColor?: string
 }
 
-const AnimatedFinancialTable = ({ data, location }: AnimatedFinancialTableProps) => {
+const AnimatedFinancialTable = ({ 
+  data, 
+  location, 
+  scrollProgress = 0,
+  textColor = 'rgb(209, 213, 219)',
+  textColorLight = 'rgb(156, 163, 175)',
+  textColorHeader = 'rgb(156, 163, 175)',
+  borderColor = 'rgb(55, 65, 81)'
+}: AnimatedFinancialTableProps) => {
   const [animatedData, setAnimatedData] = useState(data)
   const [isMounted, setIsMounted] = useState(false)
 
@@ -55,11 +68,31 @@ const AnimatedFinancialTable = ({ data, location }: AnimatedFinancialTableProps)
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-gray-800">
-                <th className="text-left py-2 px-2 font-semibold text-gray-400">Category</th>
-                <th className="text-right py-2 px-2 font-semibold text-gray-400">Amount</th>
-                <th className="text-right py-2 px-2 font-semibold text-gray-400">Δ Week</th>
-                <th className="text-right py-2 px-2 font-semibold text-gray-400">Δ Month</th>
+              <tr style={{ borderBottomColor: borderColor, transition: 'border-color 0.1s ease-out' }}>
+                <th 
+                  className="text-left py-2 px-2 font-semibold"
+                  style={{ color: textColorHeader, transition: 'color 0.1s ease-out' }}
+                >
+                  Category
+                </th>
+                <th 
+                  className="text-right py-2 px-2 font-semibold"
+                  style={{ color: textColorHeader, transition: 'color 0.1s ease-out' }}
+                >
+                  Amount
+                </th>
+                <th 
+                  className="text-right py-2 px-2 font-semibold"
+                  style={{ color: textColorHeader, transition: 'color 0.1s ease-out' }}
+                >
+                  Δ Week
+                </th>
+                <th 
+                  className="text-right py-2 px-2 font-semibold"
+                  style={{ color: textColorHeader, transition: 'color 0.1s ease-out' }}
+                >
+                  Δ Month
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -69,10 +102,27 @@ const AnimatedFinancialTable = ({ data, location }: AnimatedFinancialTableProps)
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors"
+                  style={{ 
+                    borderBottomColor: `${borderColor}80`,
+                    transition: 'border-color 0.1s ease-out, background-color 0.1s ease-out',
+                  }}
+                  className="hover:bg-opacity-30 transition-colors"
                 >
-                  <td className="py-2 px-2 text-gray-300">{row.category}</td>
-                  <td className="py-2 px-2 text-right font-semibold text-white">{row.amount}</td>
+                  <td 
+                    className="py-2 px-2"
+                    style={{ color: textColor, transition: 'color 0.1s ease-out' }}
+                  >
+                    {row.category}
+                  </td>
+                  <td 
+                    className="py-2 px-2 text-right font-semibold"
+                    style={{ 
+                      color: scrollProgress < 0.5 ? 'rgb(255, 255, 255)' : 'rgb(17, 24, 39)',
+                      transition: 'color 0.1s ease-out',
+                    }}
+                  >
+                    {row.amount}
+                  </td>
                   <td className="py-2 px-2 text-right">
                     <span className={`flex items-center justify-end gap-0.5 text-[10px] ${
                       row.trend === 'up' ? 'text-green-400' : 'text-red-400'
@@ -110,7 +160,12 @@ const AnimatedFinancialTable = ({ data, location }: AnimatedFinancialTableProps)
   if (vizType === 'bar-chart') {
     return (
       <div className="space-y-2">
-        <h4 className="text-xs font-semibold text-gray-400 mb-2">Financial Overview</h4>
+        <h4 
+          className="text-xs font-semibold mb-2"
+          style={{ color: textColorHeader, transition: 'color 0.1s ease-out' }}
+        >
+          Financial Overview
+        </h4>
         <div className="space-y-2">
           {animatedData.map((row, index) => {
             const amountValue = parseFloat(row.amount.replace(/[^0-9.]/g, ''))
@@ -125,11 +180,30 @@ const AnimatedFinancialTable = ({ data, location }: AnimatedFinancialTableProps)
                 transition={{ delay: index * 0.08 }}
                 className="space-y-0.5"
               >
-                <div className="flex items-center justify-between text-[10px] text-gray-400">
-                  <span className="truncate">{row.category}</span>
-                  <span className="font-semibold text-white ml-2">{row.amount}</span>
+                <div className="flex items-center justify-between text-[10px]">
+                  <span 
+                    className="truncate"
+                    style={{ color: textColorLight, transition: 'color 0.1s ease-out' }}
+                  >
+                    {row.category}
+                  </span>
+                  <span 
+                    className="font-semibold ml-2"
+                    style={{ 
+                      color: scrollProgress < 0.5 ? 'rgb(255, 255, 255)' : 'rgb(17, 24, 39)',
+                      transition: 'color 0.1s ease-out',
+                    }}
+                  >
+                    {row.amount}
+                  </span>
                 </div>
-                <div className="relative h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                <div 
+                  className="relative h-1.5 rounded-full overflow-hidden"
+                  style={{ 
+                    backgroundColor: scrollProgress < 0.5 ? 'rgb(31, 41, 55)' : 'rgb(229, 231, 235)',
+                    transition: 'background-color 0.1s ease-out',
+                  }}
+                >
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${percentage}%` }}
@@ -143,7 +217,10 @@ const AnimatedFinancialTable = ({ data, location }: AnimatedFinancialTableProps)
                     }`}
                   />
                 </div>
-                <div className="flex items-center justify-end gap-2 text-[10px] text-gray-500">
+                <div 
+                  className="flex items-center justify-end gap-2 text-[10px]"
+                  style={{ color: textColorLight, transition: 'color 0.1s ease-out' }}
+                >
                   <span className={row.trend === 'up' ? 'text-green-400' : 'text-red-400'}>
                     {row.vsLastWeek}
                   </span>
@@ -162,7 +239,12 @@ const AnimatedFinancialTable = ({ data, location }: AnimatedFinancialTableProps)
   // Mini Chart View for Domain Northside
   return (
     <div className="space-y-4">
-      <h4 className="text-xs font-semibold text-gray-400">Week Comparison</h4>
+      <h4 
+        className="text-xs font-semibold"
+        style={{ color: textColorHeader, transition: 'color 0.1s ease-out' }}
+      >
+        Week Comparison
+      </h4>
       <div className="flex items-end justify-between gap-3 h-32">
         {animatedData.map((row, index) => {
           const currentValue = parseFloat(row.amount.replace(/[^0-9.]/g, ''))
@@ -200,8 +282,21 @@ const AnimatedFinancialTable = ({ data, location }: AnimatedFinancialTableProps)
                 />
               </div>
               <div className="text-center w-full">
-                <div className="text-[10px] text-gray-300 font-semibold truncate">{row.amount}</div>
-                <div className="text-[9px] text-gray-500 truncate leading-tight mt-0.5">{row.category.split(' ')[0]}</div>
+                <div 
+                  className="text-[10px] font-semibold truncate"
+                  style={{ 
+                    color: scrollProgress < 0.5 ? 'rgb(209, 213, 219)' : 'rgb(17, 24, 39)',
+                    transition: 'color 0.1s ease-out',
+                  }}
+                >
+                  {row.amount}
+                </div>
+                <div 
+                  className="text-[9px] truncate leading-tight mt-0.5"
+                  style={{ color: textColorLight, transition: 'color 0.1s ease-out' }}
+                >
+                  {row.category.split(' ')[0]}
+                </div>
               </div>
             </motion.div>
           )

@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowRight, TrendingUp, DollarSign, Calendar, BarChart3, AlertCircle, Lightbulb, Target, Zap, Bot, MessageCircle, Send } from 'lucide-react'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import RotatingText from './RotatingText'
 import AnimatedFinancialTable from './AnimatedFinancialTable'
 
@@ -17,6 +17,8 @@ const Hero = () => {
   const [currentLocationIndex, setCurrentLocationIndex] = useState(0)
   const [clickingLocation, setClickingLocation] = useState<string | null>(null)
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0)
+  const [scrollProgress, setScrollProgress] = useState(0)
+  const sectionRef = useRef<HTMLElement>(null)
 
   const locations = ['Downtown Austin', 'South Congress', 'Domain Northside']
 
@@ -117,6 +119,89 @@ const Hero = () => {
   useEffect(() => {
     setIsMounted(true)
   }, [])
+
+  // Scroll progress tracking for smooth background transition
+  useEffect(() => {
+    let rafId: number | null = null
+    
+    const handleScroll = () => {
+      if (rafId) return
+      
+      rafId = requestAnimationFrame(() => {
+        if (!sectionRef.current) {
+          rafId = null
+          return
+        }
+
+        const rect = sectionRef.current.getBoundingClientRect()
+        const windowHeight = window.innerHeight
+        
+        // Start transition immediately when user starts scrolling
+        // Calculate progress based on how much of the section has scrolled past viewport top
+        const sectionTop = rect.top
+        const sectionHeight = rect.height
+        const sectionBottom = rect.bottom
+        
+        // Transition starts when section is fully visible and completes when section exits viewport
+        // Use a longer transition range for smoother effect
+        const transitionRange = sectionHeight * 0.8 // Use 80% of section height for transition
+        
+        // Calculate progress: 0 when section bottom is at viewport bottom, 1 when section top is at viewport top
+        let progress = 0
+        
+        if (sectionBottom <= windowHeight && sectionTop >= 0) {
+          // Section is in viewport - calculate progress based on scroll position
+          const scrolled = windowHeight - sectionBottom
+          progress = Math.min(1, Math.max(0, scrolled / transitionRange))
+        } else if (sectionTop < 0) {
+          // Section has scrolled past
+          progress = 1
+        }
+        
+        // Apply easing for smoother transition
+        const easedProgress = progress < 0.5 
+          ? 2 * progress * progress 
+          : 1 - Math.pow(-2 * progress + 2, 2) / 2
+        
+        setScrollProgress(easedProgress)
+        rafId = null
+      })
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll() // Initial calculation
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      if (rafId) cancelAnimationFrame(rafId)
+    }
+  }, [])
+
+  // Interpolate colors based on scroll progress
+  const interpolateColor = (start: number[], end: number[], progress: number): string => {
+    const r = Math.round(start[0] + (end[0] - start[0]) * progress)
+    const g = Math.round(start[1] + (end[1] - start[1]) * progress)
+    const b = Math.round(start[2] + (end[2] - start[2]) * progress)
+    return `rgb(${r}, ${g}, ${b})`
+  }
+
+  // Background colors: dark to white
+  const bgFrom = useMemo(() => interpolateColor([10, 10, 10], [255, 255, 255], scrollProgress), [scrollProgress])
+  const bgVia = useMemo(() => interpolateColor([15, 15, 15], [255, 255, 255], scrollProgress), [scrollProgress])
+  const bgTo = useMemo(() => interpolateColor([10, 10, 10], [255, 255, 255], scrollProgress), [scrollProgress])
+  
+  // Text colors: light to dark (for contrast on white)
+  const textColorLight = useMemo(() => interpolateColor([255, 255, 255], [17, 24, 39], scrollProgress), [scrollProgress])
+  const textColorGray = useMemo(() => interpolateColor([156, 163, 175], [75, 85, 99], scrollProgress), [scrollProgress])
+  const textColorDark = useMemo(() => interpolateColor([107, 114, 128], [55, 65, 81], scrollProgress), [scrollProgress])
+  
+  // Dashboard/Table colors: dark to light
+  const dashboardBg = useMemo(() => interpolateColor([26, 26, 26], [255, 255, 255], scrollProgress), [scrollProgress])
+  const dashboardBorder = useMemo(() => interpolateColor([55, 65, 81], [229, 231, 235], scrollProgress), [scrollProgress])
+  const tableBg = useMemo(() => interpolateColor([17, 24, 39], [249, 250, 251], scrollProgress), [scrollProgress])
+  const tableBorder = useMemo(() => interpolateColor([55, 65, 81], [209, 213, 219], scrollProgress), [scrollProgress])
+  const textInTable = useMemo(() => interpolateColor([209, 213, 219], [17, 24, 39], scrollProgress), [scrollProgress])
+  const textInTableLight = useMemo(() => interpolateColor([156, 163, 175], [107, 114, 128], scrollProgress), [scrollProgress])
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -313,7 +398,7 @@ const Hero = () => {
 
   if (!isMounted) {
     return (
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] pt-16 md:pt-20">
+      <section ref={sectionRef} className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] pt-16 md:pt-20">
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-1/4 left-1/4 w-64 h-64 md:w-96 md:h-96 bg-blue-500/10 rounded-full blur-3xl" />
           <div className="absolute bottom-1/4 right-1/4 w-64 h-64 md:w-96 md:h-96 bg-purple-500/10 rounded-full blur-3xl" />
@@ -331,11 +416,26 @@ const Hero = () => {
   }
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-[#0a0a0a] via-[#0f0f0f] to-[#0a0a0a] pt-16 md:pt-20 pb-12 md:pb-16">
+    <section 
+      ref={sectionRef}
+      className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16 md:pt-20 pb-12 md:pb-16"
+      style={{
+        background: `linear-gradient(to bottom, ${bgFrom}, ${bgVia}, ${bgTo})`,
+        transition: 'background 0.1s ease-out',
+      }}
+    >
       {/* Background decorative elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 md:w-96 md:h-96 bg-blue-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 md:w-96 md:h-96 bg-purple-500/10 rounded-full blur-3xl" />
+        <motion.div 
+          className="absolute top-1/4 left-1/4 w-64 h-64 md:w-96 md:h-96 bg-blue-500/10 rounded-full blur-3xl"
+          animate={{ opacity: 1 - scrollProgress * 0.8 }}
+          transition={{ duration: 0.1 }}
+        />
+        <motion.div 
+          className="absolute bottom-1/4 right-1/4 w-64 h-64 md:w-96 md:h-96 bg-purple-500/10 rounded-full blur-3xl"
+          animate={{ opacity: 1 - scrollProgress * 0.8 }}
+          transition={{ duration: 0.1 }}
+        />
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -358,7 +458,10 @@ const Hero = () => {
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.2 }}
-                  className="block bg-gradient-to-r from-white via-gray-100 to-gray-400 bg-clip-text text-transparent"
+                  className="block"
+                  style={{
+                    color: textColorLight,
+                  }}
                 >
                   Grow Your Restaurants
                 </motion.span>
@@ -366,7 +469,12 @@ const Hero = () => {
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.4 }}
-                  className="block bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 bg-clip-text text-transparent"
+                  className="block"
+                  style={{
+                    color: scrollProgress < 0.5 
+                      ? interpolateColor([96, 165, 250], [30, 64, 175], scrollProgress * 2)
+                      : interpolateColor([30, 64, 175], [30, 58, 138], (scrollProgress - 0.5) * 2),
+                  }}
                 >
                   Without Losing Financial Control
                 </motion.span>
@@ -375,7 +483,10 @@ const Hero = () => {
 
             <motion.div
               variants={itemVariants}
-              className="text-sm sm:text-base md:text-lg text-gray-400 leading-relaxed min-h-[3rem] sm:min-h-[3.5rem] flex items-center w-full mb-4"
+              className="text-sm sm:text-base md:text-lg leading-relaxed min-h-[3rem] sm:min-h-[3.5rem] flex items-center w-full mb-4"
+              style={{
+                color: textColorGray,
+              }}
             >
               <RotatingText
                 texts={[
@@ -385,7 +496,7 @@ const Hero = () => {
                 ]}
                 interval={4000}
                 speed={50}
-                className="text-gray-400 w-full"
+                className="w-full"
               />
             </motion.div>
 
@@ -393,14 +504,20 @@ const Hero = () => {
               variants={itemVariants}
               className="space-y-3 mb-4"
             >
-              <div className="flex flex-wrap gap-2 sm:gap-3 text-xs sm:text-sm text-gray-400">
+              <div className="flex flex-wrap gap-2 sm:gap-3 text-xs sm:text-sm">
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.8, duration: 0.4 }}
                   className="flex items-center gap-1.5 sm:gap-2"
+                  style={{ color: textColorGray }}
                 >
-                  <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-500 flex-shrink-0" />
+                  <Calendar 
+                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" 
+                    style={{
+                      color: scrollProgress < 0.5 ? '#3b82f6' : '#1e40af'
+                    }}
+                  />
                   <span>Weekly P&Ls by location</span>
                 </motion.div>
                 <motion.div
@@ -408,8 +525,14 @@ const Hero = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.9, duration: 0.4 }}
                   className="flex items-center gap-1.5 sm:gap-2"
+                  style={{ color: textColorGray }}
                 >
-                  <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-500 flex-shrink-0" />
+                  <TrendingUp 
+                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" 
+                    style={{
+                      color: scrollProgress < 0.5 ? '#3b82f6' : '#1e40af'
+                    }}
+                  />
                   <span>Daily cash flow visibility</span>
                 </motion.div>
                 <motion.div
@@ -417,8 +540,14 @@ const Hero = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 1.0, duration: 0.4 }}
                   className="flex items-center gap-1.5 sm:gap-2"
+                  style={{ color: textColorGray }}
                 >
-                  <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-500 flex-shrink-0" />
+                  <DollarSign 
+                    className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" 
+                    style={{
+                      color: scrollProgress < 0.5 ? '#3b82f6' : '#1e40af'
+                    }}
+                  />
                   <span className="line-clamp-2 sm:line-clamp-1">Actionable insights on food and labor costs</span>
                 </motion.div>
               </div>
@@ -448,7 +577,12 @@ const Hero = () => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="px-5 sm:px-6 py-2.5 sm:py-3 border-2 border-gray-700 text-gray-300 rounded-lg font-medium text-sm sm:text-base hover:border-blue-500 hover:text-blue-400 transition-colors w-full sm:w-auto text-center"
+                className="px-5 sm:px-6 py-2.5 sm:py-3 border-2 rounded-lg font-medium text-sm sm:text-base hover:border-blue-500 hover:text-blue-400 transition-colors w-full sm:w-auto text-center"
+                style={{
+                  borderColor: scrollProgress < 0.5 ? 'rgb(55, 65, 81)' : 'rgb(209, 213, 219)',
+                  color: textColorGray,
+                  transition: 'border-color 0.1s ease-out, color 0.1s ease-out',
+                }}
               >
                 <span className="hidden sm:inline">View sample weekly location P&L</span>
                 <span className="sm:hidden">View sample P&L</span>
@@ -457,7 +591,10 @@ const Hero = () => {
 
             <motion.p
               variants={itemVariants}
-              className="text-xs sm:text-sm text-gray-500 italic text-center sm:text-left"
+              className="text-xs sm:text-sm italic text-center sm:text-left"
+              style={{
+                color: textColorDark,
+              }}
             >
               Scale Your Restaurants with Confidence.
             </motion.p>
@@ -472,10 +609,21 @@ const Hero = () => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="relative bg-[#1a1a1a] rounded-xl md:rounded-2xl border border-gray-800 shadow-2xl p-3 sm:p-4 md:p-6 backdrop-blur-sm"
+              className="relative rounded-xl md:rounded-2xl border shadow-2xl p-3 sm:p-4 md:p-6 backdrop-blur-sm"
+              style={{
+                backgroundColor: dashboardBg,
+                borderColor: dashboardBorder,
+                transition: 'background-color 0.1s ease-out, border-color 0.1s ease-out',
+              }}
             >
               {/* Location Tabs */}
-              <div className="flex gap-1 sm:gap-2 mb-3 sm:mb-4 border-b border-gray-800 pb-3 sm:pb-4 overflow-x-auto scrollbar-hide">
+              <div 
+                className="flex gap-1 sm:gap-2 mb-3 sm:mb-4 border-b pb-3 sm:pb-4 overflow-x-auto scrollbar-hide"
+                style={{
+                  borderColor: dashboardBorder,
+                  transition: 'border-color 0.1s ease-out',
+                }}
+              >
                 {locations.map((location, index) => (
                   <motion.button
                     key={location}
@@ -495,7 +643,9 @@ const Hero = () => {
                     className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
                       activeLocation === location
                         ? 'bg-blue-600 text-white'
-                        : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800'
+                        : scrollProgress < 0.5 
+                        ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-800'
+                        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
                     }`}
                   >
                     <span className="hidden sm:inline">{location}</span>
@@ -505,7 +655,13 @@ const Hero = () => {
               </div>
 
               {/* Dashboard View Tabs */}
-              <div className="flex gap-1 sm:gap-2 mb-4 sm:mb-6 border-b border-gray-800 pb-3 sm:pb-4 overflow-x-auto scrollbar-hide">
+              <div 
+                className="flex gap-1 sm:gap-2 mb-4 sm:mb-6 border-b pb-3 sm:pb-4 overflow-x-auto scrollbar-hide"
+                style={{
+                  borderColor: dashboardBorder,
+                  transition: 'border-color 0.1s ease-out',
+                }}
+              >
                 {dashboardViews.map((view) => {
                   const Icon = view.icon
                   return (
@@ -515,7 +671,9 @@ const Hero = () => {
                       className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
                         dashboardView === view.id
                           ? 'bg-blue-600 text-white'
-                          : 'text-gray-400 hover:text-gray-300 hover:bg-gray-800'
+                          : scrollProgress < 0.5 
+                          ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-800'
+                          : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
                       }`}
                     >
                       <Icon className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -542,13 +700,32 @@ const Hero = () => {
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1 }}
-                      className="mb-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg"
+                      className="mb-6 p-4 rounded-lg border"
+                      style={{
+                        backgroundColor: scrollProgress < 0.5 ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.05)',
+                        borderColor: scrollProgress < 0.5 ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.15)',
+                        transition: 'background-color 0.1s ease-out, border-color 0.1s ease-out',
+                      }}
                     >
                       <div className="flex items-start gap-3">
                         <BarChart3 className="w-5 h-5 text-blue-400 mt-0.5" />
                         <div>
-                          <p className="text-sm text-blue-300 font-medium mb-1">AI Insight</p>
-                          <p className="text-sm text-gray-300">
+                          <p 
+                            className="text-sm font-medium mb-1"
+                            style={{
+                              color: scrollProgress < 0.5 ? 'rgb(147, 197, 253)' : 'rgb(37, 99, 235)',
+                              transition: 'color 0.1s ease-out',
+                            }}
+                          >
+                            AI Insight
+                          </p>
+                          <p 
+                            className="text-sm"
+                            style={{
+                              color: textInTable,
+                              transition: 'color 0.1s ease-out',
+                            }}
+                          >
                             {currentLocationData.aiInsight}
                           </p>
                         </div>
@@ -556,10 +733,22 @@ const Hero = () => {
                     </motion.div>
 
                     {/* Animated Financial Table and Charts */}
-                    <div className="relative w-full rounded-lg overflow-hidden bg-gray-900/50 border border-gray-700 p-3">
+                    <div 
+                      className="relative w-full rounded-lg overflow-hidden p-3 border"
+                      style={{
+                        backgroundColor: tableBg,
+                        borderColor: tableBorder,
+                        transition: 'background-color 0.1s ease-out, border-color 0.1s ease-out',
+                      }}
+                    >
                       <AnimatedFinancialTable 
                         data={currentLocationData.dashboardData} 
                         location={activeLocation}
+                        scrollProgress={scrollProgress}
+                        textColor={textInTable}
+                        textColorLight={textInTableLight}
+                        textColorHeader={textInTableLight}
+                        borderColor={tableBorder}
                       />
                     </div>
                   </motion.div>
@@ -594,7 +783,15 @@ const Hero = () => {
                             <Icon className="w-5 h-5 mt-0.5 flex-shrink-0" />
                             <div>
                               <p className="text-sm font-medium mb-1">{insight.title}</p>
-                              <p className="text-sm text-gray-300">{insight.message}</p>
+                              <p 
+                                className="text-sm"
+                                style={{
+                                  color: textInTable,
+                                  transition: 'color 0.1s ease-out',
+                                }}
+                              >
+                                {insight.message}
+                              </p>
                             </div>
                           </div>
                         </motion.div>
@@ -612,12 +809,25 @@ const Hero = () => {
                     transition={{ duration: 0.3 }}
                     className="space-y-4"
                   >
-                    <div className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-lg mb-4">
+                    <div 
+                      className="p-4 rounded-lg border mb-4"
+                      style={{
+                        backgroundColor: scrollProgress < 0.5 ? 'rgba(168, 85, 247, 0.1)' : 'rgba(168, 85, 247, 0.05)',
+                        borderColor: scrollProgress < 0.5 ? 'rgba(168, 85, 247, 0.2)' : 'rgba(168, 85, 247, 0.15)',
+                        transition: 'background-color 0.1s ease-out, border-color 0.1s ease-out',
+                      }}
+                    >
                       <div className="flex items-start gap-3">
                         <TrendingUp className="w-5 h-5 text-purple-400 mt-0.5" />
                         <div>
                           <p className="text-sm text-purple-300 font-medium mb-1">AI Forecast</p>
-                          <p className="text-sm text-gray-300">
+                          <p 
+                            className="text-sm"
+                            style={{
+                              color: textInTable,
+                              transition: 'color 0.1s ease-out',
+                            }}
+                          >
                             Based on historical data and current trends, here's what to expect next week.
                           </p>
                         </div>
@@ -629,14 +839,43 @@ const Hero = () => {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.1 }}
-                        className="p-4 bg-gray-800/50 border border-gray-700 rounded-lg"
+                        className="p-4 border rounded-lg"
+                        style={{
+                          backgroundColor: scrollProgress < 0.5 ? 'rgba(31, 41, 55, 0.5)' : 'rgba(249, 250, 251, 0.5)',
+                          borderColor: tableBorder,
+                          transition: 'background-color 0.1s ease-out, border-color 0.1s ease-out',
+                        }}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm text-gray-300">{item.metric}</span>
-                          <span className="text-sm font-semibold text-white">{item.value}</span>
+                          <span 
+                            className="text-sm"
+                            style={{
+                              color: textInTable,
+                              transition: 'color 0.1s ease-out',
+                            }}
+                          >
+                            {item.metric}
+                          </span>
+                          <span 
+                            className="text-sm font-semibold"
+                            style={{
+                              color: textColorLight,
+                              transition: 'color 0.1s ease-out',
+                            }}
+                          >
+                            {item.value}
+                          </span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-500">Confidence: {item.confidence}</span>
+                          <span 
+                            className="text-xs"
+                            style={{
+                              color: textInTableLight,
+                              transition: 'color 0.1s ease-out',
+                            }}
+                          >
+                            Confidence: {item.confidence}
+                          </span>
                           <span className="text-sm text-green-400 flex items-center gap-1">
                             <TrendingUp className="w-4 h-4" />
                             {item.change}
@@ -677,8 +916,24 @@ const Hero = () => {
                               'text-green-400'
                             }`} />
                             <div className="flex-1">
-                              <p className="text-sm text-gray-300 mb-1">{alert.message}</p>
-                              <p className="text-xs text-gray-500">{alert.time}</p>
+                              <p 
+                                className="text-sm mb-1"
+                                style={{
+                                  color: textInTable,
+                                  transition: 'color 0.1s ease-out',
+                                }}
+                              >
+                                {alert.message}
+                              </p>
+                              <p 
+                                className="text-xs"
+                                style={{
+                                  color: textInTableLight,
+                                  transition: 'color 0.1s ease-out',
+                                }}
+                              >
+                                {alert.time}
+                              </p>
                             </div>
                           </div>
                         </motion.div>
@@ -724,7 +979,15 @@ const Hero = () => {
                     </div>
                     <div>
                       <h3 className="text-sm font-semibold text-white">AI Assistant</h3>
-                      <p className="text-xs text-gray-400">Analyzing {activeLocation} data...</p>
+                      <p 
+                        className="text-xs"
+                        style={{
+                          color: textInTableLight,
+                          transition: 'color 0.1s ease-out',
+                        }}
+                      >
+                        Analyzing {activeLocation} data...
+                      </p>
                     </div>
                   </div>
 
