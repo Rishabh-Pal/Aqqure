@@ -12,7 +12,7 @@ export default function Home() {
         <Navbar />
         <Hero />
         <AqqruePromise />
-        <TheProblem />
+        {/* <TheProblem /> */}
       </main>
     </>
   )
